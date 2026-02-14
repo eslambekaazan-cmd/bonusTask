@@ -15,10 +15,10 @@ public final class InMemoryCache implements Cache {
     private final Duration ttl;
 
     private InMemoryCache(Duration ttl) {
-        this.ttl = ttl; // например 5 минут
+        this.ttl = ttl; 
     }
 
-    // ✅ Singleton (Double-checked locking)
+   
     public static InMemoryCache getInstance(Duration ttl) {
         if (instance == null) {
             synchronized (InMemoryCache.class) {
