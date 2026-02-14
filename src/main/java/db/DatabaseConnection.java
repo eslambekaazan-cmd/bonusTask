@@ -13,9 +13,9 @@ public final class DatabaseConnection {
     private final String password;
 
     private DatabaseConnection(String url, String user, String password) {
-        this.url = url;
-        this.user = user;
-        this.password = password;
+        this.url ="jdbc:postgresql://localhost:5432/api";
+        this.user = "postgres";
+        this.password = "1234";
     }
 
     public static DatabaseConnection getInstance(String url, String user, String password) {

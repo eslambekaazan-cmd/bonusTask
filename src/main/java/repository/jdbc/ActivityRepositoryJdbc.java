@@ -10,11 +10,14 @@ import patterns.ActivityFactory;
 import repository.interfaces.ActivityRepository;
 import repository.interfaces.RoutineRepository;
 
+import org.springframework.stereotype.Repository;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public class ActivityRepositoryJdbc implements ActivityRepository {
 
     private final DatabaseConnection db;
@@ -44,7 +47,6 @@ public class ActivityRepositoryJdbc implements ActivityRepository {
 
     @Override
     public SelfCareActivityBase create(SelfCareActivityBase entity) {
-
         String sql = """
             INSERT INTO activities
             (name, routine_id, activity_type, kind, minutes, intensity, difficulty, focus_area)
@@ -59,8 +61,8 @@ public class ActivityRepositoryJdbc implements ActivityRepository {
             ps.setInt(2, entity.getRoutine().getId());
 
             if (entity instanceof WellnessActivity w) {
-                ps.setString(3, "WELLNESS"); // activity_type
-                ps.setString(4, "WELLNESS"); // kind
+                ps.setString(3, "WELLNESS");
+                ps.setString(4, "WELLNESS");
 
                 ps.setInt(5, w.getMinutes());
                 ps.setString(6, w.getIntensity());
@@ -68,8 +70,8 @@ public class ActivityRepositoryJdbc implements ActivityRepository {
                 ps.setNull(8, Types.VARCHAR);
 
             } else if (entity instanceof ProductivityActivity p) {
-                ps.setString(3, "PRODUCTIVITY"); // activity_type
-                ps.setString(4, "PRODUCTIVITY"); // kind
+                ps.setString(3, "PRODUCTIVITY");
+                ps.setString(4, "PRODUCTIVITY");
 
                 ps.setNull(5, Types.INTEGER);
                 ps.setNull(6, Types.VARCHAR);
@@ -126,7 +128,6 @@ public class ActivityRepositoryJdbc implements ActivityRepository {
 
     @Override
     public SelfCareActivityBase update(SelfCareActivityBase entity) {
-
         String sql = """
             UPDATE activities
             SET name=?, routine_id=?, activity_type=?, kind=?, minutes=?, intensity=?, difficulty=?, focus_area=?
@@ -185,7 +186,6 @@ public class ActivityRepositoryJdbc implements ActivityRepository {
     }
 
     private SelfCareActivityBase mapRow(ResultSet rs) throws SQLException {
-
         int id = rs.getInt("id");
         String name = rs.getString("name");
         int routineId = rs.getInt("routine_id");

@@ -47,7 +47,7 @@ public class AppBeansConfig {
         return new RoutineRepositoryJdbc(db, routineTypeRepository);
     }
 
-    @Bean
+
     public ActivityRepository activityRepository(
             DatabaseConnection db,
             RoutineRepository routineRepository,

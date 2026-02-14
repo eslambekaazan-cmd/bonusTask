@@ -1,71 +1,74 @@
 package service.impl;
 
-import exception.DuplicateResourceException;
-import exception.InvalidInputException;
-import exception.ResourceNotFoundException;
-import interfaces.Validatable;
+import cache.CacheKey;
+import cache.InMemoryCache;
 import model.base.SelfCareActivityBase;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Service;
 import repository.interfaces.ActivityRepository;
 import service.interfaces.ActivityService;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-
+@Primary
+@Service
 public class ActivityServiceImpl implements ActivityService {
 
-    private final ActivityRepository activityRepo;
+    private static final String NS = "activities";
+    private static final CacheKey ALL_KEY = CacheKey.of(NS, "getAll");
 
-    public ActivityServiceImpl(ActivityRepository activityRepo) {
-        this.activityRepo = activityRepo;
+    private final ActivityRepository activityRepository;
+    private final InMemoryCache cache = InMemoryCache.getInstance(Duration.ofMinutes(5));
+
+    public ActivityServiceImpl(ActivityRepository activityRepository) {
+        this.activityRepository = activityRepository;
     }
 
     @Override
-    public SelfCareActivityBase create(SelfCareActivityBase activity) {
-        if (activity == null) throw new InvalidInputException("activity is null");
-        activity.validate();
-
-        String cleanName = Validatable.notNullOrTrim(activity.getName());
-        if (cleanName.isEmpty()) throw new InvalidInputException("name is empty");
-        activity.setName(cleanName);
-
-        if (activityRepo.existsByName(activity.getName())) {
-            throw new DuplicateResourceException("Activity with name already exists: " + activity.getName());
-        }
-        return activityRepo.create(activity);
-    }
-
-    @Override
-    public SelfCareActivityBase getById(int id) {
-        if (id <= 0) throw new InvalidInputException("id must be > 0");
-        return activityRepo.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Activity not found: id=" + id));
-    }
-
-    @Override
+    @SuppressWarnings("unchecked")
     public List<SelfCareActivityBase> getAll() {
-        return activityRepo.findAll();
+        return (List<SelfCareActivityBase>) cache.getOrLoad(
+                ALL_KEY,
+                List.class,
+                activityRepository::findAll
+        );
     }
 
     @Override
     public List<SelfCareActivityBase> getAllSortedByScoreDesc() {
-        List<SelfCareActivityBase> list = activityRepo.findAll();
-        list.sort((a, b) -> Integer.compare(b.estimateScore(), a.estimateScore())); // lambda
-        return list;
+        // НЕ сортируем список из кэша напрямую — делаем копию
+        List<SelfCareActivityBase> copy = new ArrayList<>(getAll());
+        copy.sort((a, b) -> Integer.compare(b.estimateScore(), a.estimateScore()));
+        return copy;
     }
 
     @Override
-    public SelfCareActivityBase update(SelfCareActivityBase activity) {
-        if (activity == null) throw new InvalidInputException("activity is null");
-        if (activity.getId() <= 0) throw new InvalidInputException("id must be > 0");
-        activity.validate();
+    public SelfCareActivityBase getById(int id) {
+        return activityRepository.findById(id).orElse(null);
+    }
 
-        getById(activity.getId()); // ensure exists
-        activityRepo.update(activity);
-        return getById(activity.getId());
+    @Override
+    public SelfCareActivityBase create(SelfCareActivityBase entity) {
+        SelfCareActivityBase saved = activityRepository.create(entity);
+        cache.invalidate(ALL_KEY);
+        return saved;
+    }
+
+    @Override
+    public SelfCareActivityBase update(SelfCareActivityBase entity) {
+        SelfCareActivityBase updated = activityRepository.update(entity);
+        cache.invalidate(ALL_KEY);
+        return updated;
     }
 
     @Override
     public void delete(int id) {
-        getById(id);
-        activityRepo.delete(id);
+        activityRepository.delete(id);
+        cache.invalidate(ALL_KEY);
+    }
+
+    public void clearActivitiesCache() {
+        cache.invalidateNamespace(NS);
     }
 }
