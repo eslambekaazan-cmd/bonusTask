@@ -21,7 +21,7 @@ public class AppBeansConfig {
 
     @Bean
     public DatabaseConnection databaseConnection() {
-        // ⚠️ если у тебя другие данные БД — поменяй тут
+      
         return DatabaseConnection.getInstance(
                 "jdbc:postgresql://localhost:5432/postgres",
                 "postgres",
