@@ -37,7 +37,7 @@ public class ActivityServiceImpl implements ActivityService {
 
     @Override
     public List<SelfCareActivityBase> getAllSortedByScoreDesc() {
-        // НЕ сортируем список из кэша напрямую — делаем копию
+       
         List<SelfCareActivityBase> copy = new ArrayList<>(getAll());
         copy.sort((a, b) -> Integer.compare(b.estimateScore(), a.estimateScore()));
         return copy;
